@@ -1,0 +1,53 @@
+version: "2.1"
+services:
+    id2_mysql:
+        build:
+            context: ./mysql
+            dockerfile: Dockerfile
+        container_name: id2_mysql
+        environment:
+            MYSQL_DATABASE: id20
+            MYSQL_ROOT_USER: id20
+            MYSQL_ROOT_PASSWORD: id20
+        ports:
+            - 6603:3306
+        volumes:
+            - /var/lib/mysql
+    id2_composer:
+        image: composer/composer:php7
+        container_name: id2_composer
+        command: update --lock --ignore-platform-reqs
+        volumes:
+            - ../backend:/app
+    id2_nginx:
+        image: phalconphp/nginx
+        container_name: id2_nginx
+        ports:
+            - "7100:80"
+        volumes:
+            - ../backend:/app
+            - ./nginx/default.conf:/etc/nginx/sites-available/default.conf
+            - ./nginx/default.conf:/etc/nginx/sites-enabled/default.conf
+        depends_on:
+            - id2_php
+    id2_php:
+        build:
+            context: ./phalcon
+            dockerfile: Dockerfile
+        entrypoint: ""
+        command: bash -c "php-fpm7.0 -F"
+        container_name: id2_phalcon
+        working_dir: /app
+        environment:
+            PHP_IDE_CONFIG: "serverName=id2"
+        ports:
+            - "9110:9000"
+            - "9111:9001"
+        volumes:
+            - ../backend:/app
+        depends_on:
+            - id2_mysql
+            - id2_composer
+        dns: 8.8.8.8
+volumes:
+  id2_mysql:
